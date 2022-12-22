@@ -2,10 +2,31 @@ import Head from 'next/head'
 import Image from 'next/image'
 import { Inter } from '@next/font/google'
 import styles from '../styles/Home.module.css'
+import axios from 'axios'
+import {useRequest} from 'ahooks'
+import { useState } from 'react'
 
 const inter = Inter({ subsets: ['latin'] })
+const controller = new AbortController();
 
 export default function Home() {
+  const { data, loading } = useRequest<{name: string}, any>(()=>{
+    return new Promise((resolve, reject)=> {
+      axios.post('/api/post/test', {
+        firstName: 'Fred',
+        lastName: 'Flintstone'
+      },{
+          signal: controller.signal
+      }).then(res=>{
+        resolve(res.data)
+      }).catch(error=>{
+        reject(error)
+      })
+    })
+  })
+  console.log(data,loading)
+  const [a,setA] = useState(1)
+
   return (
     <>
       <Head>
@@ -16,6 +37,14 @@ export default function Home() {
       </Head>
       <main className={styles.main}>
         <div className={styles.description}>
+          <span>{String(loading)}</span>
+          <span>{data?.name || 'name'}</span>
+          <button onClick={()=>{
+            controller.abort()
+          }}>cancel</button>
+          <button onClick={()=>{
+            setA(1)
+          }}>set1{a}</button>
           <p>
             Get started by editing&nbsp;
             <code className={styles.code}>pages/index.tsx</code>
@@ -121,3 +150,13 @@ export default function Home() {
     </>
   )
 }
+
+// export async function getServerSideProps() {
+//   // Fetch data from external API
+//   const res = await fetch(`https://.../data`)
+//   const data = await res.json()
+//   console.log('data', data)
+
+//   // Pass data to the page via props
+//   return { props: { data } }
+// }
